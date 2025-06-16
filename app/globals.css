@@ -1,0 +1,46 @@
+@import "tailwindcss";
+
+@page {
+  marks: none;
+}
+@page :footer {
+  display: none;
+}
+@page :header {
+  display: none;
+}
+
+@media print {
+  body {
+    background: rgb(0, 0, 0) !important;
+    color: rgb(255, 255, 255) !important;
+  }
+  button,
+  nav,
+  footer {
+    display: none;
+  }
+}
+
+/* Minimal background fix */
+html {
+  background: linear-gradient(
+    to bottom right,
+    rgb(196, 181, 253),
+    rgb(167, 139, 250)
+  );
+  min-height: 100%;
+}
+
+html.dark {
+  background: linear-gradient(
+    to bottom right,
+    rgb(88, 28, 135),
+    rgb(59, 7, 100)
+  );
+}
+
+body {
+  background: transparent;
+  min-height: 100vh;
+}
