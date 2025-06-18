@@ -41,7 +41,7 @@ export default function ToggleTheme() {
   return (
     <button
       className={
-        "fixed top-4 right-14 z-50 rounded-full p-2 shadow transition-colors duration-300 " +
+        "fixed top-4 right-11 z-50 rounded-full p-2 shadow transition-colors duration-300 " +
         (darkMode ? "bg-purple-700" : "bg-pink-300")
       }
       onClick={() => setDarkMode((prev) => !prev)}

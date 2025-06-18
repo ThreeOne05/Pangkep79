@@ -88,7 +88,7 @@ export default function NotaPage() {
         document.head.appendChild(emptyFavicon);
 
         // Set document title
-        document.title = "Nota Pembayaran - Warung Kopi";
+        document.title = "Nota Pembayaran - Warung pangkep 79";
 
         // Add meta untuk mobile
         let viewportMeta = document.querySelector('meta[name="viewport"]');
@@ -469,7 +469,7 @@ export default function NotaPage() {
       // Print dengan delay
       setTimeout(() => {
         const originalTitle = document.title;
-        document.title = "Nota Pembayaran - Warung Kopi";
+        document.title = "Nota Pembayaran - Warung pangkep 79";
 
         window.print();
 
@@ -506,7 +506,7 @@ export default function NotaPage() {
         hideNextJsLogosOnly();
 
         const originalTitle = document.title;
-        document.title = "Nota Pembayaran - Warung Kopi";
+        document.title = "Nota Pembayaran - Warung pangkep 79";
 
         window.print();
 
@@ -664,7 +664,7 @@ export default function NotaPage() {
             width: 70mm !important;
             max-width: 70mm !important;
             margin: 0 !important;
-            padding: 2mm !important;
+            padding: 0mm !important;
             background: white !important;
             color: #000000 !important;
             font-size: 16px !important;

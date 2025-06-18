@@ -85,7 +85,6 @@ export async function POST(req) {
   }
 }
 
-// DELETE: Hapus transaksi by id (penghasilan hariini/bulanini TIDAK dikurangi)
 export async function DELETE(req) {
   const url = new URL(req.url, "http://localhost");
   const id = url.pathname.split("/").pop();
@@ -97,8 +96,56 @@ export async function DELETE(req) {
   try {
     const client = await clientPromise;
     const db = client.db();
+
+    // Cari dulu transaksi yang akan dihapus
+    const transaksi = await db
+      .collection("transactions")
+      .findOne({ _id: new ObjectId(id) });
+
+    if (!transaksi) {
+      return NextResponse.json(
+        { success: false, error: "Transaksi tidak ditemukan" },
+        { status: 404 }
+      );
+    }
+
+    // Hapus transaksi
     await db.collection("transactions").deleteOne({ _id: new ObjectId(id) });
-    // Tidak perlu update penghasilan hariini/bulanini!
+
+    // Kurangi penghasilan hariini jika tanggal transaksi hari ini
+    const tanggalTransaksi = new Date(transaksi.date);
+    const now = new Date();
+
+    const isToday =
+      tanggalTransaksi.getDate() === now.getDate() &&
+      tanggalTransaksi.getMonth() === now.getMonth() &&
+      tanggalTransaksi.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      await db
+        .collection("penghasilan")
+        .updateOne(
+          { _id: "hariini" },
+          { $inc: { total: -Math.abs(Number(transaksi.total)) } },
+          { upsert: true }
+        );
+    }
+
+    // Kurangi penghasilan bulanini jika bulan & tahun transaksi sama dengan sekarang
+    const isThisMonth =
+      tanggalTransaksi.getMonth() === now.getMonth() &&
+      tanggalTransaksi.getFullYear() === now.getFullYear();
+
+    if (isThisMonth) {
+      await db
+        .collection("penghasilan")
+        .updateOne(
+          { _id: "bulanini" },
+          { $inc: { total: -Math.abs(Number(transaksi.total)) } },
+          { upsert: true }
+        );
+    }
+
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json(

@@ -1,14 +1,14 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Sidebar } from "../components/Sidebar";
 import { PaymentSidebar } from "../components/PaymentSidebar";
-import { ContentHeader } from "../components/ContentHeader";
 import { CardGrid } from "../components/CardGrid";
 import { ProductForm } from "../components/Form";
 import { usePayment } from "../context/PaymentContext";
+import { menuItems } from "../components/path";
+import { ContentHeader } from "../components/ContentHeader";
+import Link from "next/link";
 
 export default function DashboardPage() {
-  const [isOpen, setIsOpen] = useState(true);
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
 
@@ -29,17 +29,17 @@ export default function DashboardPage() {
     clearSelectedProducts,
   } = usePayment();
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
   const toggleDeleteMode = () => setIsDeleteMode(!isDeleteMode);
 
   useEffect(() => {
+    setIsPaymentOpen(true); // PaymentSidebar otomatis terbuka
+
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products/");
         if (!response.ok) throw new Error("Failed to fetch products");
         const data = await response.json();
 
-        // Perbaikan: data.products (bukan data langsung)
         const makanan = [];
         const minuman = [];
         const snack = [];
@@ -79,7 +79,7 @@ export default function DashboardPage() {
       }
     };
     fetchProducts();
-  }, []);
+  }, [setIsPaymentOpen]);
 
   const handleAddCard = () => setIsFormOpen(true);
 
@@ -121,106 +121,120 @@ export default function DashboardPage() {
   };
 
   return (
-    <>
-      <div className="flex min-h-screen">
-        <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
+    <div className="flex min-h-screen">
+      <PaymentSidebar
+        selectedProducts={selectedProducts || []}
+        onRemoveProduct={removeProduct}
+        onClearProducts={clearSelectedProducts}
+      />
 
-        <PaymentSidebar
-          isOpen={isPaymentOpen}
-          toggleSidebar={() => setIsPaymentOpen(!isPaymentOpen)}
-          selectedProducts={selectedProducts || []}
-          onRemoveProduct={removeProduct}
-          onClearProducts={clearSelectedProducts}
-        />
-
-        <div
-          className={`flex-1 transition-all duration-300 ${
-            isOpen ? "ml-52" : "ml-0"
-          } ${isPaymentOpen ? "mr-64" : "mr-0"}`}
-        >
-          <div className="bg-blue-50 text-black px-6 py-3 font-bold rounded-b-4xl mb-8 ml-20 mr-28">
-            <ContentHeader
-              title="Warung Pangkep79"
-              onAdd={handleAddCard}
-              onToggleDelete={toggleDeleteMode}
-              isDeleteMode={isDeleteMode}
-            />
+      <div className={"flex-1 transition-all duration-300 mr-60"}>
+        {/* HEADER */}
+        <div className="bg-blue-50 text-black px-4 py-3 font-bold rounded-b-4xl mb-4 ml-16 mr-4">
+          <div className="flex items-center gap-6">
+            {/* Kiri: Judul */}
+            <div className="flex-1 flex items-center">
+              <span className="text-50 font-bold">Warung Pangkep79</span>
+            </div>
+            {/* Tengah: Path menu (pakai Next Link) */}
+            <div className="flex-1 flex justify-center">
+              <nav className="flex gap-6">
+                {menuItems.map((item) => (
+                  <Link
+                    key={item.path}
+                    href={item.path}
+                    className="text-black font-semibold hover:underline transition-colors"
+                  >
+                    {item.name}
+                  </Link>
+                ))}
+              </nav>
+            </div>
+            {/* Kanan: Tombol Add (+) dan Delete (X Circle) */}
+            <div className="flex-1 flex justify-end">
+              <ContentHeader
+                title=""
+                onAdd={handleAddCard}
+                onToggleDelete={toggleDeleteMode}
+                isDeleteMode={isDeleteMode}
+              />
+            </div>
           </div>
+        </div>
 
-          <div className="px-20">
-            {/* Kategori Makanan */}
-            {(groupedProducts.makanan || []).length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Makanan</h2>
-                  <div className="flex-grow border-t border-gray-300 ml-4"></div>
-                </div>
-                <CardGrid
-                  cards={groupedProducts.makanan || []}
-                  isDeleteMode={isDeleteMode}
-                  onDelete={(id) => handleDeleteCard(id, "makanan")}
-                  onCardClick={addProduct}
-                />
+        <div className="px-4">
+          {/* Kategori Makanan */}
+          {(groupedProducts.makanan || []).length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Makanan</h2>
+                <div className="flex-grow border-t border-gray-300 ml-4"></div>
               </div>
-            )}
+              <CardGrid
+                cards={groupedProducts.makanan || []}
+                isDeleteMode={isDeleteMode}
+                onDelete={(id) => handleDeleteCard(id, "makanan")}
+                onCardClick={addProduct}
+              />
+            </div>
+          )}
 
-            {/* Kategori Minuman */}
-            {(groupedProducts.minuman || []).length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Minuman</h2>
-                  <div className="flex-grow border-t border-gray-300 ml-4"></div>
-                </div>
-                <CardGrid
-                  cards={groupedProducts.minuman || []}
-                  isDeleteMode={isDeleteMode}
-                  onDelete={(id) => handleDeleteCard(id, "minuman")}
-                  onCardClick={addProduct}
-                />
+          {/* Kategori Minuman */}
+          {(groupedProducts.minuman || []).length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Minuman</h2>
+                <div className="flex-grow border-t border-gray-300 ml-4"></div>
               </div>
-            )}
+              <CardGrid
+                cards={groupedProducts.minuman || []}
+                isDeleteMode={isDeleteMode}
+                onDelete={(id) => handleDeleteCard(id, "minuman")}
+                onCardClick={addProduct}
+              />
+            </div>
+          )}
 
-            {/* Kategori Snack */}
-            {(groupedProducts.snack || []).length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Snack</h2>
-                  <div className="flex-grow border-t border-gray-300 ml-4"></div>
-                </div>
-                <CardGrid
-                  cards={groupedProducts.snack || []}
-                  isDeleteMode={isDeleteMode}
-                  onDelete={(id) => handleDeleteCard(id, "snack")}
-                  onCardClick={addProduct}
-                />
+          {/* Kategori Snack */}
+          {(groupedProducts.snack || []).length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Snack</h2>
+                <div className="flex-grow border-t border-gray-300 ml-4"></div>
               </div>
-            )}
+              <CardGrid
+                cards={groupedProducts.snack || []}
+                isDeleteMode={isDeleteMode}
+                onDelete={(id) => handleDeleteCard(id, "snack")}
+                onCardClick={addProduct}
+              />
+            </div>
+          )}
 
-            {/* Kategori Bungkus */}
-            {(groupedProducts.bungkus || []).length > 0 && (
-              <div className="mb-8">
-                <div className="flex items-center mb-4">
-                  <h2 className="text-xl font-bold text-white">Bungkus</h2>
-                  <div className="flex-grow border-t border-gray-300 ml-4"></div>
-                </div>
-                <CardGrid
-                  cards={groupedProducts.bungkus || []}
-                  isDeleteMode={isDeleteMode}
-                  onDelete={(id) => handleDeleteCard(id, "bungkus")}
-                  onCardClick={addProduct}
-                />
+          {/* Kategori Bungkus */}
+          {(groupedProducts.bungkus || []).length > 0 && (
+            <div className="mb-8">
+              <div className="flex items-center mb-4">
+                <h2 className="text-xl font-bold text-black">Bungkus</h2>
+                <div className="flex-grow border-t border-gray-300 ml-4"></div>
               </div>
-            )}
-          </div>
-
-          {isFormOpen && (
-            <ProductForm
-              onClose={() => setIsFormOpen(false)}
-              onSubmit={handleSubmitForm}
-            />
+              <CardGrid
+                cards={groupedProducts.bungkus || []}
+                isDeleteMode={isDeleteMode}
+                onDelete={(id) => handleDeleteCard(id, "bungkus")}
+                onCardClick={addProduct}
+              />
+            </div>
           )}
         </div>
+
+        {isFormOpen && (
+          <ProductForm
+            onClose={() => setIsFormOpen(false)}
+            onSubmit={handleSubmitForm}
+          />
+        )}
       </div>
-    </>
+    </div>
   );
 }

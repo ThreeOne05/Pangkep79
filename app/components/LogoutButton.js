@@ -22,7 +22,7 @@ export default function LogoutButton() {
 
   if (darkMode === null) return null;
   const baseClass =
-    "p-1 rounded-full transition-colors duration-300 shadow mr-10";
+    "p-1 rounded-full transition-colors duration-300 shadow mr-5 z-50";
   const themeClass = darkMode
     ? "bg-pink-200 text-purple-700 hover:bg-pink-300"
     : "bg-purple-700 text-pink-200 hover:bg-purple-800";
@@ -37,7 +37,7 @@ export default function LogoutButton() {
       title="Logout"
       type="button"
     >
-      <ArrowUturnLeftIcon className="h-4 w-4" />
+      <ArrowUturnLeftIcon className="h-5 w-5" />
     </button>
   );
 }

@@ -1,8 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation";
 import {
-  XCircleIcon,
-  ArrowLeftCircleIcon,
   TrashIcon,
   CheckCircleIcon,
   BanknotesIcon,
@@ -10,10 +7,11 @@ import {
 import { QrCodeIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect } from "react";
 import useDarkMode from "../hooks/useDarkMode";
+import { useRouter } from "next/navigation";
 
 export const PaymentSidebar = ({
-  isOpen,
-  toggleSidebar,
+  // isOpen, // DIHAPUS: sidebar selalu terbuka
+  // toggleSidebar, // DIHAPUS: sidebar selalu terbuka
   selectedProducts,
   onRemoveProduct,
   onClearProducts,
@@ -185,7 +183,7 @@ export const PaymentSidebar = ({
           price: product.price || 0,
           quantity: product.quantity || 1,
         })),
-        kasir: currentKasir?.username || "ThreeOne05",
+        kasir: currentKasir?.username || "Pangkep79",
         paymentMethod: paymentMethod,
         includeTax: includeTax,
         tax: includeTax ? tax : 0,
@@ -234,7 +232,7 @@ export const PaymentSidebar = ({
       };
 
       const kasirData = {
-        username: currentKasir?.username || "ThreeOne05",
+        username: currentKasir?.username || "Pangkep79",
       };
 
       localStorage.setItem("notaProducts", JSON.stringify(notaData));
@@ -278,16 +276,9 @@ export const PaymentSidebar = ({
   const sidebarText = isDark ? "text-pink-100" : "text-purple-800";
   const shadow = isDark ? "shadow-purple-950/40" : "shadow-purple-200/40";
 
+  // Sidebar SELALU TAMPIL, tidak ada toggle/close button
   return (
     <>
-      {/* Backdrop untuk mobile */}
-      {isMobile && isOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
-          onClick={toggleSidebar}
-        />
-      )}
-
       {/* Cash Modal */}
       {showCashModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -444,72 +435,35 @@ export const PaymentSidebar = ({
       <div
         className={`
           ${sidebarBg} ${sidebarText} ${borderStyle} ${shadow}
-          fixed z-40 h-10/12 flex flex-col
+          fixed z-40 flex flex-col
           transition-all duration-500
-          ${
-            isOpen
-              ? "translate-x-0 opacity-100"
-              : `${
-                  isMobile ? "translate-x-full" : "translate-x-[240px]"
-                } opacity-0 pointer-events-none`
-          }
+          top-0 right-0 w-56 h-[100vh] rounded-l-2xl px-3 py-4 gap-1
           shadow-xl
-          ${
-            isMobile
-              ? "top-0 right-0 w-80 rounded-l-xl px-2 py-2 gap-1"
-              : "top-20 right-0 w-60 rounded-l-2xl px-3 py-4 gap-3"
-          }
         `}
         style={{
           backdropFilter: "blur(8px)",
         }}
       >
         {/* Header dengan info kasir */}
-        <div
-          className={`flex-shrink-0 flex flex-col ${
-            isMobile ? "mb-2" : "mb-3"
-          }`}
-        >
+        <div className="flex-shrink-0 flex flex-col mb-3">
           <div className="flex items-center justify-between">
-            <span
-              className={`font-bold select-none ${
-                isMobile ? "text-sm" : "text-lg"
-              }`}
-            >
-              Bayar
-            </span>
-            <button
-              onClick={toggleSidebar}
-              className="p-0.5 hover:bg-white/20 rounded-full transition-colors"
-              disabled={isProcessing}
-            >
-              <XCircleIcon
-                className={`text-pink-300 ${isMobile ? "w-4 h-4" : "w-5 h-5"}`}
-              />
-            </button>
+            <span className="font-bold select-none text-lg">Bayar</span>
+            {/* Tombol tutup dihapus */}
           </div>
-          <div
-            className={`${
-              isMobile ? "text-[10px]" : "text-xs"
-            } opacity-70 mt-1`}
-          >
+          <div className="text-xs opacity-70 mt-1">
             Kasir: {currentKasir?.username || "ThreeOne05"}
           </div>
         </div>
 
         {/* Products List */}
-        <div
-          className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-200/60 ${
-            isMobile ? "max-h-44" : "max-h-60"
-          }`}
-        >
+        <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-200/60 max-h-[70vh]">
           {selectedProducts.length > 0 ? (
-            <ul className={`flex flex-col ${isMobile ? "gap-1" : "gap-2"}`}>
+            <ul className="flex flex-col gap-2">
               {selectedProducts.map((product, index) => (
                 <li
                   key={`${product.id}-${index}`}
                   className={`flex justify-between items-center transition-all rounded border
-                    ${isMobile ? "px-2 py-1" : "px-3 py-2"}
+                    px-3 py-2
                     ${
                       isDark
                         ? "bg-purple-900/40 border-pink-900/30"
@@ -519,28 +473,20 @@ export const PaymentSidebar = ({
                   `}
                 >
                   <div className="flex-1 min-w-0">
-                    <p
-                      className={`font-medium truncate ${
-                        isMobile ? "text-xs leading-3" : "text-sm"
-                      }`}
-                    >
+                    <p className="font-medium truncate text-sm">
                       {product.name}
                     </p>
                     <p
-                      className={`${
-                        isMobile ? "text-[10px] leading-3" : "text-xs"
-                      } ${isDark ? "text-pink-200" : "text-purple-600"}`}
+                      className={`text-xs ${
+                        isDark ? "text-pink-200" : "text-purple-600"
+                      }`}
                     >
                       {product.quantity ?? 1}×Rp
                       {(product.price ?? 0).toLocaleString()}
                     </p>
                   </div>
                   <div className="flex items-center gap-1 ml-1 flex-shrink-0">
-                    <p
-                      className={`font-semibold ${
-                        isMobile ? "text-[10px]" : "text-xs"
-                      }`}
-                    >
+                    <p className="font-semibold text-xs">
                       Rp
                       {(
                         (product.price ?? 0) * (product.quantity ?? 1)
@@ -551,110 +497,75 @@ export const PaymentSidebar = ({
                       className="p-0.5 hover:bg-pink-100/50 rounded transition-colors"
                       disabled={isProcessing}
                     >
-                      <TrashIcon
-                        className={`text-red-400 ${
-                          isMobile ? "w-2.5 h-2.5" : "w-3 h-3"
-                        }`}
-                      />
+                      <TrashIcon className="text-red-400 w-3 h-3" />
                     </button>
                   </div>
                 </li>
               ))}
             </ul>
           ) : (
-            <div
-              className={`flex items-center justify-center opacity-60 ${
-                isMobile ? "h-16" : "h-20"
-              }`}
-            >
-              <p className={`${isMobile ? "text-[10px]" : "text-xs"}`}>
-                Kosong
-              </p>
+            <div className="flex items-center justify-center opacity-60 h-20">
+              <p className="text-xs">Kosong</p>
             </div>
           )}
         </div>
 
         {/* Footer Actions */}
-        <div
-          className={`space-y-2 border-t pt-2 ${isMobile ? "border-t" : ""}`}
-        >
+        <div className="space-y-2 border-t pt-2">
           <div className="flex gap-1">
             <button
               onClick={toggleTax}
               disabled={isProcessing}
-              className={`flex-1 rounded font-medium transition-all duration-200 ${
-                isMobile ? "py-1 px-2 text-[10px]" : "py-1.5 px-2 text-xs"
-              } ${
-                includeTax
-                  ? "bg-green-500 text-white shadow-sm hover:bg-green-600"
-                  : "bg-white/60 text-purple-800 hover:bg-purple-200 border"
-              } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
+              className={`flex-1 rounded font-medium transition-all duration-200 py-1.5 px-2 text-xs
+                ${
+                  includeTax
+                    ? "bg-green-500 text-white shadow-sm hover:bg-green-600"
+                    : "bg-white/60 text-purple-800 hover:bg-purple-200 border"
+                } ${isProcessing ? "opacity-50 cursor-not-allowed" : ""}`}
             >
-              {includeTax ? "✓ +Pajak 10%" : "+ Pajak 10%"}
+              {includeTax ? "✓ 10%" : "+ 10%"}
             </button>
 
             <button
               onClick={openCashModal}
               disabled={isProcessing || selectedProducts.length === 0}
-              className={`flex-1 rounded font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
-                isMobile ? "py-1 px-2 text-[10px]" : "py-1.5 px-2 text-xs"
-              } ${
-                isProcessing || selectedProducts.length === 0
-                  ? "bg-gray-400 cursor-not-allowed text-white"
-                  : "bg-green-500 text-white hover:bg-green-600 shadow-sm"
-              }`}
+              className={`flex-1 rounded font-medium transition-all duration-200 flex items-center justify-center gap-1 py-1.5 px-2 text-xs
+                ${
+                  isProcessing || selectedProducts.length === 0
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-green-500 text-white hover:bg-green-600 shadow-sm"
+                }`}
             >
-              <BanknotesIcon
-                className={`${isMobile ? "w-2.5 h-2.5" : "w-3 h-3"}`}
-              />
+              <BanknotesIcon className="w-3 h-3" />
               Tunai
             </button>
 
             <button
               onClick={openQrisModal}
               disabled={isProcessing || selectedProducts.length === 0}
-              className={`flex-1 rounded font-medium transition-all duration-200 flex items-center justify-center gap-1 ${
-                isMobile ? "py-1 px-2 text-[10px]" : "py-1.5 px-2 text-xs"
-              } ${
-                isProcessing || selectedProducts.length === 0
-                  ? "bg-gray-400 cursor-not-allowed text-white"
-                  : "bg-purple-500 text-white hover:bg-purple-600 shadow-sm"
-              }`}
+              className={`flex-1 rounded font-medium transition-all duration-200 flex items-center justify-center gap-1 py-1.5 px-2 text-xs
+                ${
+                  isProcessing || selectedProducts.length === 0
+                    ? "bg-gray-400 cursor-not-allowed text-white"
+                    : "bg-purple-500 text-white hover:bg-purple-600 shadow-sm"
+                }`}
             >
-              <QrCodeIcon
-                className={`${isMobile ? "w-2.5 h-2.5" : "w-3 h-3"}`}
-              />
+              <QrCodeIcon className="w-3 h-3" />
               QRIS
             </button>
           </div>
-          <div
-            className={`space-y-1 rounded ${
-              isMobile ? "px-2 py-1" : "px-3 py-2"
-            } ${isDark ? "bg-purple-900/40" : "bg-purple-100/70"}`}
-          >
-            <div
-              className={`flex justify-between ${
-                isMobile ? "text-[10px]" : "text-xs"
-              }`}
-            >
+          <div className="space-y-1 rounded px-3 py-2 bg-purple-100/70">
+            <div className="flex justify-between text-xs">
               <span className="opacity-80">Sub:</span>
               <span className="font-medium">Rp{subtotal.toLocaleString()}</span>
             </div>
             {includeTax && (
-              <div
-                className={`flex justify-between ${
-                  isMobile ? "text-[10px]" : "text-xs"
-                }`}
-              >
+              <div className="flex justify-between text-xs">
                 <span className="opacity-80">Pajak:</span>
                 <span className="font-medium">Rp{tax.toLocaleString()}</span>
               </div>
             )}
-            <div
-              className={`flex justify-between font-bold border-t border-white/20 pt-1 ${
-                isMobile ? "text-xs" : "text-sm"
-              }`}
-            >
+            <div className="flex justify-between font-bold border-t border-white/20 pt-1 text-sm">
               <span>Total:</span>
               <span className="text-blue-400">
                 Rp{totalPrice.toLocaleString()}
@@ -662,15 +573,14 @@ export const PaymentSidebar = ({
             </div>
           </div>
           <button
-            className={`w-full rounded font-semibold transition-colors duration-200 shadow-lg ${
-              isMobile ? "py-1.5 px-2 text-xs" : "py-2 px-3 text-sm"
-            } ${
-              isProcessing
-                ? "bg-gray-400 cursor-not-allowed"
-                : selectedProducts.length === 0
-                ? "bg-gray-400 cursor-not-allowed"
-                : "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700"
-            }`}
+            className={`w-full rounded font-semibold transition-colors duration-200 shadow-lg py-2 px-3 text-sm
+              ${
+                isProcessing
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : selectedProducts.length === 0
+                  ? "bg-gray-400 cursor-not-allowed"
+                  : "bg-blue-500 text-white hover:bg-blue-600 active:bg-blue-700"
+              }`}
             disabled={selectedProducts.length === 0 || isProcessing}
             onClick={() => handlePayment("cash")}
           >
@@ -680,42 +590,11 @@ export const PaymentSidebar = ({
       </div>
       {showNotif && (
         <div
-          className={`fixed top-8 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white rounded-lg shadow-lg flex items-center gap-1 font-semibold animate-bounce ${
-            isMobile ? "px-3 py-1.5 text-xs" : "px-4 py-2 text-sm"
-          }`}
+          className={`fixed top-8 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white rounded-lg shadow-lg flex items-center gap-1 font-semibold animate-bounce px-4 py-2 text-sm`}
         >
-          <CheckCircleIcon className={`${isMobile ? "w-3 h-3" : "w-4 h-4"}`} />
+          <CheckCircleIcon className="w-4 h-4" />
           Pembayaran Berhasil!
         </div>
-      )}
-
-      {/* Toggle Button - Desktop Only */}
-      {!isMobile && (
-        <button
-          className={`
-            fixed top-20 p-1.5 z-50 transition-all
-            ${isOpen ? "right-60" : "right-0"}
-          `}
-          onClick={toggleSidebar}
-          disabled={isProcessing}
-        >
-          {isOpen ? (
-            <XCircleIcon className="w-6 h-6 text-pink-400 bg-white/80 rounded-full shadow hover:scale-110 transition-all" />
-          ) : (
-            <ArrowLeftCircleIcon className="w-6 h-6 text-purple-600 bg-white/80 rounded-full shadow hover:scale-110 transition-all" />
-          )}
-        </button>
-      )}
-
-      {/* Mobile Toggle Button */}
-      {isMobile && !isOpen && (
-        <button
-          className="fixed bottom-4 right-4 p-2 z-50 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 transition-all"
-          onClick={toggleSidebar}
-          disabled={isProcessing}
-        >
-          <ArrowLeftCircleIcon className="w-4 h-4" />
-        </button>
       )}
     </>
   );

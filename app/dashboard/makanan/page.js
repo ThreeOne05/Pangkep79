@@ -1,40 +1,37 @@
 "use client";
 import { useEffect, useState } from "react";
-import { Sidebar } from "../../components/Sidebar";
-import { PaymentSidebar } from "../../components/PaymentSidebar";
 import { ContentHeader } from "../../components/ContentHeader";
 import { CardGrid } from "../../components/CardGrid";
 import { ProductForm } from "../../components/Form";
+import { PaymentSidebar } from "../../components/PaymentSidebar"; // Pastikan import ini ada!
 import { usePayment } from "../../context/PaymentContext";
+import { menuItems } from "../../components/path";
+import Link from "next/link";
 
 export default function MakananLayout() {
-  const [isOpen, setIsOpen] = useState(true);
   const [cards, setCards] = useState([]);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
-  // Context untuk pembayaran
+  // Payment context
   const {
+    addProduct,
     selectedProducts,
     isPaymentOpen,
     setIsPaymentOpen,
-    addProduct,
     removeProduct,
     clearSelectedProducts,
   } = usePayment();
 
-  const toggleSidebar = () => setIsOpen(!isOpen);
   const toggleDeleteMode = () => setIsDeleteMode(!isDeleteMode);
 
   useEffect(() => {
+    setIsPaymentOpen(true); // PaymentSidebar otomatis terbuka
     const fetchProducts = async () => {
       try {
         const response = await fetch("/api/products/");
-        if (!response.ok) {
-          throw new Error("Failed to fetch products");
-        }
+        if (!response.ok) throw new Error("Failed to fetch products");
         const data = await response.json();
-        // Pastikan data.products adalah array
         const produkArray = Array.isArray(data.products) ? data.products : [];
         const makananCards = produkArray
           .filter((product) => product.category === "makanan")
@@ -53,12 +50,11 @@ export default function MakananLayout() {
         setCards(makananCards);
       } catch (error) {
         console.error("Error fetching products:", error);
-        setCards([]); // fallback jika error
+        setCards([]);
       }
     };
-
     fetchProducts();
-  }, []);
+  }, [setIsPaymentOpen]);
 
   const handleDeleteCard = async (id) => {
     try {
@@ -75,7 +71,6 @@ export default function MakananLayout() {
     }
   };
 
-  // Handler untuk submit produk baru dari form
   const handleSubmitForm = (newProduct) => {
     setCards((prevCards) => [
       {
@@ -96,7 +91,7 @@ export default function MakananLayout() {
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar isOpen={isOpen} toggleSidebar={toggleSidebar} />
+      {/* PaymentSidebar muncul di sini */}
       <PaymentSidebar
         isOpen={isPaymentOpen}
         toggleSidebar={() => setIsPaymentOpen(!isPaymentOpen)}
@@ -104,18 +99,33 @@ export default function MakananLayout() {
         onRemoveProduct={removeProduct}
         onClearProducts={clearSelectedProducts}
       />
-      <div
-        className={`flex-1 transition-all duration-300 ${
-          isOpen ? "ml-52" : "ml-0"
-        } ${isPaymentOpen ? "mr-64" : "mr-0"}`}
-      >
-        <div className="bg-blue-50 text-black px-6 py-3 font-bold rounded-b-4xl mb-8 ml-20 mr-28">
-          <ContentHeader
-            title="Makanan"
-            onAdd={() => setIsFormOpen(true)}
-            onToggleDelete={toggleDeleteMode}
-            isDeleteMode={isDeleteMode}
-          />
+      <div className={"flex-1 transition-all duration-300 mr-60"}>
+        <div className="bg-blue-50 text-black px-6 py-3 font-bold rounded-b-4xl mb-8 ml-16 mr-4">
+          <div className="flex items-center justify-between">
+            {/* Kiri: Judul */}
+            <div className="text-2xl font-bold">Makanan</div>
+            {/* Tengah: Path menu */}
+            <nav className="flex gap-6">
+              {menuItems.map((item) => (
+                <Link
+                  key={item.path}
+                  href={item.path}
+                  className="text-black font-semibold hover:underline transition-colors"
+                >
+                  {item.name}
+                </Link>
+              ))}
+            </nav>
+            {/* Kanan: Tombol add & delete */}
+            <div>
+              <ContentHeader
+                title=""
+                onAdd={() => setIsFormOpen(true)}
+                onToggleDelete={toggleDeleteMode}
+                isDeleteMode={isDeleteMode}
+              />
+            </div>
+          </div>
         </div>
         <div className="px-20">
           {cards.length > 0 ? (

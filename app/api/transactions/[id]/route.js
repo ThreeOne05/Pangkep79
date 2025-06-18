@@ -66,7 +66,7 @@ export async function PATCH(request, context) {
   }
 }
 
-// DELETE: Hapus transaksi (tidak mengurangi penghasilan hariini/bulanini)
+// DELETE: Hapus transaksi (MENGURANGI penghasilan hariini/bulanini jika perlu)
 export async function DELETE(request, context) {
   const params = await context.params;
   const { id } = params;
@@ -74,18 +74,64 @@ export async function DELETE(request, context) {
     const client = await clientPromise;
     const db = client.db();
 
-    const { deletedCount } = await db
+    // Ambil data transaksi sebelum dihapus
+    const transaksi = await db
       .collection("transactions")
-      .deleteOne({ _id: new ObjectId(id) });
+      .findOne({ _id: new ObjectId(id) });
 
-    if (deletedCount === 0) {
+    if (!transaksi) {
       return NextResponse.json(
         { success: false, error: "Transaksi tidak ditemukan" },
         { status: 404 }
       );
     }
 
-    // Tidak mengurangi penghasilan hariini/bulanini!
+    // Hapus transaksi
+    const { deletedCount } = await db
+      .collection("transactions")
+      .deleteOne({ _id: new ObjectId(id) });
+
+    if (deletedCount === 0) {
+      return NextResponse.json(
+        { success: false, error: "Transaksi tidak ditemukan (sudah dihapus)" },
+        { status: 404 }
+      );
+    }
+
+    // Kurangi penghasilan hariini jika tanggal transaksi hari ini
+    const tanggalTransaksi = new Date(transaksi.date);
+    const now = new Date();
+
+    const isToday =
+      tanggalTransaksi.getDate() === now.getDate() &&
+      tanggalTransaksi.getMonth() === now.getMonth() &&
+      tanggalTransaksi.getFullYear() === now.getFullYear();
+
+    if (isToday) {
+      await db
+        .collection("penghasilan")
+        .updateOne(
+          { _id: "hariini" },
+          { $inc: { total: -Math.abs(Number(transaksi.total)) } },
+          { upsert: true }
+        );
+    }
+
+    // Kurangi penghasilan bulanini jika bulan & tahun transaksi sama dengan sekarang
+    const isThisMonth =
+      tanggalTransaksi.getMonth() === now.getMonth() &&
+      tanggalTransaksi.getFullYear() === now.getFullYear();
+
+    if (isThisMonth) {
+      await db
+        .collection("penghasilan")
+        .updateOne(
+          { _id: "bulanini" },
+          { $inc: { total: -Math.abs(Number(transaksi.total)) } },
+          { upsert: true }
+        );
+    }
+
     return NextResponse.json({ success: true });
   } catch (e) {
     return NextResponse.json(
