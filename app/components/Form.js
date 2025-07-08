@@ -161,6 +161,7 @@ export const ProductForm = ({ onClose, onSubmit }) => {
               <option value="minuman">Minuman</option>
               <option value="snack">Snack</option>
               <option value="bungkus">Bungkus</option>
+              <option value="rokok">Rokok</option>
             </select>
           </div>
 

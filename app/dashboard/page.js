@@ -8,78 +8,82 @@ import { menuItems } from "../components/path";
 import { ContentHeader } from "../components/ContentHeader";
 import Link from "next/link";
 
+const CATEGORIES = ["makanan", "minuman", "snack", "bungkus", "rokok"];
+
+// Helper untuk update order ke backend
+async function updateProductOrder(category, orderedIds) {
+  await fetch("/api/products/reorder", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ category, orderedIds }),
+  });
+}
+
 export default function DashboardPage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [isDeleteMode, setIsDeleteMode] = useState(false);
-
+  const [isReorderMode, setIsReorderMode] = useState(false); // satu tombol global
   const [groupedProducts, setGroupedProducts] = useState({
     makanan: [],
     minuman: [],
     snack: [],
     bungkus: [],
+    rokok: [],
   });
+  const [loading, setLoading] = useState(true);
 
   // Payment context
   const {
     selectedProducts,
-    isPaymentOpen,
     setIsPaymentOpen,
     addProduct,
     removeProduct,
     clearSelectedProducts,
   } = usePayment();
 
-  const toggleDeleteMode = () => setIsDeleteMode(!isDeleteMode);
+  const toggleDeleteMode = () => setIsDeleteMode((prev) => !prev);
+  const toggleReorderMode = () => setIsReorderMode((prev) => !prev);
+
+  const fetchProducts = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/products?limit=100");
+      if (!response.ok) throw new Error("Failed to fetch products");
+      const data = await response.json();
+
+      const grouped = {};
+      for (const cat of CATEGORIES) grouped[cat] = [];
+      if (Array.isArray(data.products)) {
+        for (const product of data.products) {
+          const card = {
+            id: product._id,
+            name: product.name || "",
+            title: product.name || "",
+            description: `Harga: Rp${parseInt(
+              product.price || 0
+            ).toLocaleString()}`,
+            image: product.image || "",
+            price: Number(product.price) || 0,
+            quantity: product.quantity ? Number(product.quantity) : 1,
+            category: product.category,
+          };
+          if (grouped[product.category]) grouped[product.category].push(card);
+        }
+      }
+      setGroupedProducts(grouped);
+    } catch (error) {
+      setGroupedProducts(
+        Object.fromEntries(CATEGORIES.map((cat) => [cat, []]))
+      );
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    setIsPaymentOpen(true); // PaymentSidebar otomatis terbuka
-
-    const fetchProducts = async () => {
-      try {
-        const response = await fetch("/api/products/");
-        if (!response.ok) throw new Error("Failed to fetch products");
-        const data = await response.json();
-
-        const makanan = [];
-        const minuman = [];
-        const snack = [];
-        const bungkus = [];
-
-        if (Array.isArray(data.products)) {
-          for (const product of data.products) {
-            const card = {
-              id: product._id,
-              name: product.name || "",
-              title: product.name || "",
-              description: `Harga: Rp${parseInt(
-                product.price || 0
-              ).toLocaleString()}`,
-              image: product.image || "",
-              price: Number(product.price) || 0,
-              quantity: product.quantity ? Number(product.quantity) : 1,
-              category: product.category,
-            };
-
-            if (product.category === "makanan") makanan.push(card);
-            else if (product.category === "minuman") minuman.push(card);
-            else if (product.category === "snack") snack.push(card);
-            else if (product.category === "bungkus") bungkus.push(card);
-          }
-        }
-
-        setGroupedProducts({ makanan, minuman, snack, bungkus });
-      } catch (error) {
-        console.error("Error fetching products:", error);
-        setGroupedProducts({
-          makanan: [],
-          minuman: [],
-          snack: [],
-          bungkus: [],
-        });
-      }
-    };
+    setIsPaymentOpen?.(true);
     fetchProducts();
-  }, [setIsPaymentOpen]);
+    // eslint-disable-next-line
+  }, []);
 
   const handleAddCard = () => setIsFormOpen(true);
 
@@ -112,12 +116,21 @@ export default function DashboardPage() {
           ...prev,
           [category]: (prev[category] || []).filter((card) => card.id !== id),
         }));
-      } else {
-        console.error("Failed to delete product");
       }
-    } catch (error) {
-      console.error("Error deleting product:", error);
-    }
+    } catch (error) {}
+  };
+
+  // Inilah perubahan penting: update backend setiap kali urutan berubah
+  const handleReorder = async (category, newCards) => {
+    setGroupedProducts((prev) => ({
+      ...prev,
+      [category]: newCards,
+    }));
+    // Kirim ke backend agar urutan bertahan
+    await updateProductOrder(
+      category,
+      newCards.map((card) => card.id)
+    );
   };
 
   return (
@@ -127,16 +140,13 @@ export default function DashboardPage() {
         onRemoveProduct={removeProduct}
         onClearProducts={clearSelectedProducts}
       />
-
       <div className={"flex-1 transition-all duration-300 mr-60"}>
         {/* HEADER */}
         <div className="bg-blue-50 text-black px-4 py-3 font-bold rounded-b-4xl mb-4 ml-16 mr-4">
           <div className="flex items-center gap-6">
-            {/* Kiri: Judul */}
             <div className="flex-1 flex items-center">
               <span className="text-50 font-bold">Warung Pangkep79</span>
             </div>
-            {/* Tengah: Path menu (pakai Next Link) */}
             <div className="flex-1 flex justify-center">
               <nav className="flex gap-6">
                 {menuItems.map((item) => (
@@ -150,81 +160,49 @@ export default function DashboardPage() {
                 ))}
               </nav>
             </div>
-            {/* Kanan: Tombol Add (+) dan Delete (X Circle) */}
             <div className="flex-1 flex justify-end">
               <ContentHeader
                 title=""
                 onAdd={handleAddCard}
                 onToggleDelete={toggleDeleteMode}
                 isDeleteMode={isDeleteMode}
+                isReorderMode={isReorderMode}
+                onToggleReorder={toggleReorderMode}
               />
             </div>
           </div>
         </div>
 
         <div className="px-4">
-          {/* Kategori Makanan */}
-          {(groupedProducts.makanan || []).length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Makanan</h2>
-                <div className="flex-grow border-t border-gray-300 ml-4"></div>
-              </div>
-              <CardGrid
-                cards={groupedProducts.makanan || []}
-                isDeleteMode={isDeleteMode}
-                onDelete={(id) => handleDeleteCard(id, "makanan")}
-                onCardClick={addProduct}
-              />
+          {loading ? (
+            <div className="text-center py-12 text-gray-500">
+              Loading products...
             </div>
-          )}
-
-          {/* Kategori Minuman */}
-          {(groupedProducts.minuman || []).length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Minuman</h2>
-                <div className="flex-grow border-t border-gray-300 ml-4"></div>
-              </div>
-              <CardGrid
-                cards={groupedProducts.minuman || []}
-                isDeleteMode={isDeleteMode}
-                onDelete={(id) => handleDeleteCard(id, "minuman")}
-                onCardClick={addProduct}
-              />
-            </div>
-          )}
-
-          {/* Kategori Snack */}
-          {(groupedProducts.snack || []).length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Snack</h2>
-                <div className="flex-grow border-t border-gray-300 ml-4"></div>
-              </div>
-              <CardGrid
-                cards={groupedProducts.snack || []}
-                isDeleteMode={isDeleteMode}
-                onDelete={(id) => handleDeleteCard(id, "snack")}
-                onCardClick={addProduct}
-              />
-            </div>
-          )}
-
-          {/* Kategori Bungkus */}
-          {(groupedProducts.bungkus || []).length > 0 && (
-            <div className="mb-8">
-              <div className="flex items-center mb-4">
-                <h2 className="text-xl font-bold text-black">Bungkus</h2>
-                <div className="flex-grow border-t border-gray-300 ml-4"></div>
-              </div>
-              <CardGrid
-                cards={groupedProducts.bungkus || []}
-                isDeleteMode={isDeleteMode}
-                onDelete={(id) => handleDeleteCard(id, "bungkus")}
-                onCardClick={addProduct}
-              />
-            </div>
+          ) : (
+            <>
+              {CATEGORIES.map((kategori) =>
+                (groupedProducts[kategori] || []).length > 0 ? (
+                  <div className="mb-8" key={kategori}>
+                    <div className="flex items-center mb-4">
+                      <h2 className="text-xl font-bold text-black capitalize">
+                        {kategori}
+                      </h2>
+                      <div className="flex-grow border-t border-gray-300 ml-4"></div>
+                    </div>
+                    <CardGrid
+                      cards={groupedProducts[kategori] || []}
+                      isDeleteMode={isDeleteMode}
+                      isReorderActive={isReorderMode}
+                      onDelete={(id) => handleDeleteCard(id, kategori)}
+                      onCardClick={addProduct}
+                      onReorder={(newCards) =>
+                        handleReorder(kategori, newCards)
+                      }
+                    />
+                  </div>
+                ) : null
+              )}
+            </>
           )}
         </div>
 

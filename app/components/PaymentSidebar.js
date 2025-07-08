@@ -5,7 +5,7 @@ import {
   BanknotesIcon,
 } from "@heroicons/react/24/solid";
 import { QrCodeIcon } from "@heroicons/react/24/outline";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import useDarkMode from "../hooks/useDarkMode";
 import { useRouter } from "next/navigation";
 
@@ -27,6 +27,10 @@ export const PaymentSidebar = ({
   const [cashInput, setCashInput] = useState("");
   const isDark = useDarkMode();
   const router = useRouter();
+
+  // Tambahan: ref untuk input tunai
+  const cashInputRef = useRef(null);
+  const [shouldAutoFocusCash, setShouldAutoFocusCash] = useState(false);
 
   // Get current kasir from localStorage
   useEffect(() => {
@@ -128,6 +132,7 @@ export const PaymentSidebar = ({
     setShowCashModal(true);
     setCashInput("");
     setCashAmount(0);
+    setShouldAutoFocusCash(false); // Jangan autofokus saat pertama buka modal
   };
 
   // Open QRIS modal
@@ -140,6 +145,7 @@ export const PaymentSidebar = ({
     setShowCashModal(false);
     setCashInput("");
     setCashAmount(0);
+    setShouldAutoFocusCash(false);
   };
 
   // Close QRIS modal
@@ -276,6 +282,13 @@ export const PaymentSidebar = ({
   const sidebarText = isDark ? "text-pink-100" : "text-purple-800";
   const shadow = isDark ? "shadow-purple-950/40" : "shadow-purple-200/40";
 
+  // Autofocus input jika shouldAutoFocusCash true setelah modal tampil
+  useEffect(() => {
+    if (showCashModal && shouldAutoFocusCash && cashInputRef.current) {
+      cashInputRef.current.focus();
+    }
+  }, [showCashModal, shouldAutoFocusCash]);
+
   // Sidebar SELALU TAMPIL, tidak ada toggle/close button
   return (
     <>
@@ -294,7 +307,7 @@ export const PaymentSidebar = ({
               </h3>
               <p className="text-sm text-gray-600">
                 Total:{" "}
-                <span className="font-semibold text-blue-600">
+                <span className=" text-green-700 font-extrabold">
                   Rp{totalPrice.toLocaleString()}
                 </span>
               </p>
@@ -307,17 +320,19 @@ export const PaymentSidebar = ({
                 <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500 font-medium">
                   Rp
                 </span>
+                {/* Ubah: input tidak autofocus, klik input baru focus */}
                 <input
                   type="text"
                   inputMode="numeric"
                   pattern="[0-9]*"
                   value={cashInput}
+                  ref={cashInputRef}
+                  onFocus={() => setShouldAutoFocusCash(true)}
                   onChange={(e) => handleCashInput(e.target.value)}
                   onKeyDown={handleKeyDown}
                   onPaste={handlePaste}
                   className="w-full pl-10 pr-4 py-3 border border-gray-300 rounded-lg text-lg font-semibold text-center focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                   placeholder="0"
-                  autoFocus
                   autoComplete="off"
                 />
               </div>
@@ -403,16 +418,10 @@ export const PaymentSidebar = ({
               <h3 className="text-lg font-bold text-gray-800 mb-1">
                 Pembayaran QRIS
               </h3>
-              <p className="text-sm text-gray-600">
-                Silakan lakukan pembayaran QRIS sesuai nominal berikut:
-                <br />
-                <span className="font-semibold text-blue-600">
-                  Rp{totalPrice.toLocaleString()}
-                </span>
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                Setelah pembayaran QRIS berhasil, klik tombol di bawah.
-              </p>
+
+              <span className="font-bold text-blue-600 text-2xl">
+                Rp{totalPrice.toLocaleString()}
+              </span>
             </div>
             <div className="flex gap-2 mt-4">
               <button
@@ -451,7 +460,7 @@ export const PaymentSidebar = ({
             {/* Tombol tutup dihapus */}
           </div>
           <div className="text-xs opacity-70 mt-1">
-            Kasir: {currentKasir?.username || "ThreeOne05"}
+            Kasir: {currentKasir?.username || "ayu"}
           </div>
         </div>
 
@@ -481,7 +490,10 @@ export const PaymentSidebar = ({
                         isDark ? "text-pink-200" : "text-purple-600"
                       }`}
                     >
-                      {product.quantity ?? 1}×Rp
+                      <span className="text-red-500 font-extrabold">
+                        {product.quantity ?? 1}x
+                      </span>
+                      Rp
                       {(product.price ?? 0).toLocaleString()}
                     </p>
                   </div>
@@ -567,7 +579,7 @@ export const PaymentSidebar = ({
             )}
             <div className="flex justify-between font-bold border-t border-white/20 pt-1 text-sm">
               <span>Total:</span>
-              <span className="text-blue-400">
+              <span className="text-red-800 font-bold">
                 Rp{totalPrice.toLocaleString()}
               </span>
             </div>
