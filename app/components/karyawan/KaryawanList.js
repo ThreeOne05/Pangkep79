@@ -57,7 +57,7 @@ export default function KaryawanList({
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    onDelete(k._id);
+                    onDelete(k); // Pass the entire karyawan object instead of just ID
                   }}
                   className="px-3 py-1 rounded-lg text-xs bg-red-100 text-red-700 font-semibold hover:bg-red-200 transition"
                   title="Hapus"

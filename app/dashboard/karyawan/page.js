@@ -3,6 +3,7 @@ import { useEffect, useState, useRef } from "react";
 import KaryawanForm from "@/app/components/karyawan/KaryawanForm";
 import KaryawanKasbonModal from "@/app/components/karyawan/KaryawanKasbonModal";
 import KaryawanIzinModal from "@/app/components/karyawan/KaryawanIzinModal";
+import KaryawanDeleteModal from "@/app/components/karyawan/KaryawanDeleteModal";
 import KaryawanList from "@/app/components/karyawan/KaryawanList";
 import {
   UserGroupIcon,
@@ -29,6 +30,7 @@ export default function KaryawanPage() {
   const [kasbonKaryawan, setKasbonKaryawan] = useState(null);
   const [ajukanKaryawan, setAjukanKaryawan] = useState(null);
   const [detailKaryawan, setDetailKaryawan] = useState(null);
+  const [deleteKaryawan, setDeleteKaryawan] = useState(null); // State untuk modal delete
 
   const listRef = useRef(null);
 
@@ -59,17 +61,21 @@ export default function KaryawanPage() {
   const handleAddClick = () => setShowForm(true);
   const handleAddKaryawan = (baru) => setKaryawan((prev) => [baru, ...prev]);
 
-  // Hapus tanpa alert/confirm
-  const handleDelete = async (id) => {
+  // Handler untuk menampilkan modal konfirmasi delete
+  const handleDeleteClick = (karyawanData) => {
+    setDeleteKaryawan(karyawanData);
+  };
+
+  // Handler untuk konfirmasi delete (setelah user klik "Ya, Hapus")
+  const handleConfirmDelete = async (id) => {
     try {
       const res = await fetch(`/api/karyawan/${id}`, { method: "DELETE" });
       if (res.ok) {
         setKaryawan((prev) => prev.filter((k) => String(k._id) !== String(id)));
         if (String(selected) === String(id)) setSelected(null);
       }
-      // Tidak ada alert apapun
     } catch {
-      // Tidak ada alert apapun
+      // Handle error silently or show notification
     }
   };
 
@@ -88,10 +94,7 @@ export default function KaryawanPage() {
         );
         setAjukanKaryawan(null);
       }
-      // Tidak ada alert apapun
-    } catch {
-      // Tidak ada alert apapun
-    }
+    } catch {}
   };
 
   const handleTambahKasbon = async (id, jumlah) => {
@@ -108,10 +111,7 @@ export default function KaryawanPage() {
         );
         setKasbonKaryawan(null);
       }
-      // Tidak ada alert apapun
-    } catch {
-      // Tidak ada alert apapun
-    }
+    } catch {}
   };
 
   const selectedKaryawan =
@@ -291,12 +291,14 @@ export default function KaryawanPage() {
               karyawan={karyawan}
               selectedId={selected}
               onSelect={handleSelect}
-              onDelete={handleDelete}
+              onDelete={handleDeleteClick} // Changed to use the new handler
               onDetail={handleDetail}
             />
           )}
         </div>
       </div>
+
+      {/* MODALS */}
       {showForm && (
         <KaryawanForm
           onClose={() => setShowForm(false)}
@@ -325,6 +327,14 @@ export default function KaryawanPage() {
         <DetailModal
           karyawan={detailKaryawan}
           onClose={() => setDetailKaryawan(null)}
+        />
+      )}
+      {/* NEW DELETE CONFIRMATION MODAL */}
+      {deleteKaryawan && (
+        <KaryawanDeleteModal
+          karyawan={deleteKaryawan}
+          onClose={() => setDeleteKaryawan(null)}
+          onConfirm={handleConfirmDelete}
         />
       )}
     </div>

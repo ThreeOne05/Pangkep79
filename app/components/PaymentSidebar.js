@@ -1,14 +1,9 @@
 "use client";
-import {
-  TrashIcon,
-  CheckCircleIcon,
-  BanknotesIcon,
-} from "@heroicons/react/24/solid";
+import { TrashIcon, BanknotesIcon } from "@heroicons/react/24/solid";
 import { QrCodeIcon } from "@heroicons/react/24/outline";
 import { useState, useEffect, useRef } from "react";
 import useDarkMode from "../hooks/useDarkMode";
 import { useRouter } from "next/navigation";
-
 export const PaymentSidebar = ({
   // isOpen, // DIHAPUS: sidebar selalu terbuka
   // toggleSidebar, // DIHAPUS: sidebar selalu terbuka
@@ -17,7 +12,6 @@ export const PaymentSidebar = ({
   onClearProducts,
 }) => {
   const [includeTax, setIncludeTax] = useState(false);
-  const [showNotif, setShowNotif] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [currentKasir, setCurrentKasir] = useState(null);
@@ -27,11 +21,9 @@ export const PaymentSidebar = ({
   const [cashInput, setCashInput] = useState("");
   const isDark = useDarkMode();
   const router = useRouter();
-
   // Tambahan: ref untuk input tunai
   const cashInputRef = useRef(null);
   const [shouldAutoFocusCash, setShouldAutoFocusCash] = useState(false);
-
   // Get current kasir from localStorage
   useEffect(() => {
     const kasirData = localStorage.getItem("kasir");
@@ -46,53 +38,43 @@ export const PaymentSidebar = ({
       setCurrentKasir({ username: "ThreeOne05" });
     }
   }, []);
-
   // Detect mobile device
   useEffect(() => {
     const checkMobile = () => {
       setIsMobile(window.innerWidth < 768);
     };
-
     checkMobile();
     window.addEventListener("resize", checkMobile);
     return () => window.removeEventListener("resize", checkMobile);
   }, []);
-
   const subtotal = selectedProducts.reduce(
     (sum, product) => sum + (product.price ?? 0) * (product.quantity ?? 1),
     0
   );
   const tax = Math.round(subtotal * 0.1);
   const totalPrice = includeTax ? subtotal + tax : subtotal;
-
   const toggleTax = () => setIncludeTax(!includeTax);
-
   // Format number to rupiah
   const formatRupiah = (number) => {
     return new Intl.NumberFormat("id-ID").format(number);
   };
-
   // Parse rupiah format to number
   const parseRupiah = (rupiahString) => {
     return parseInt(rupiahString.replace(/\./g, "")) || 0;
   };
-
   // Handle cash input change - Only numbers
   const handleCashInput = (value) => {
     const numericOnly = value.replace(/[^0-9]/g, "");
-
     if (numericOnly === "") {
       setCashInput("");
       setCashAmount(0);
       return;
     }
-
     const number = parseInt(numericOnly);
     const formatted = formatRupiah(number);
     setCashInput(formatted);
     setCashAmount(number);
   };
-
   // Prevent non-numeric input
   const handleKeyDown = (e) => {
     if (
@@ -111,7 +93,6 @@ export const PaymentSidebar = ({
       e.preventDefault();
     }
   };
-
   // Handle paste event to ensure only numbers
   const handlePaste = (e) => {
     e.preventDefault();
@@ -119,14 +100,12 @@ export const PaymentSidebar = ({
     const numericOnly = paste.replace(/[^0-9]/g, "");
     handleCashInput(numericOnly);
   };
-
   // Calculate change
   const calculateChange = () => {
     const cash =
       typeof cashAmount === "number" ? cashAmount : parseRupiah(cashAmount);
     return cash - totalPrice;
   };
-
   // Open cash modal
   const openCashModal = () => {
     setShowCashModal(true);
@@ -134,12 +113,10 @@ export const PaymentSidebar = ({
     setCashAmount(0);
     setShouldAutoFocusCash(false); // Jangan autofokus saat pertama buka modal
   };
-
   // Open QRIS modal
   const openQrisModal = () => {
     setShowQrisModal(true);
   };
-
   // Close cash modal
   const closeCashModal = () => {
     setShowCashModal(false);
@@ -147,12 +124,10 @@ export const PaymentSidebar = ({
     setCashAmount(0);
     setShouldAutoFocusCash(false);
   };
-
   // Close QRIS modal
   const closeQrisModal = () => {
     setShowQrisModal(false);
   };
-
   // Handle cash confirm
   const handleCashConfirm = () => {
     const cash =
@@ -162,26 +137,21 @@ export const PaymentSidebar = ({
       handlePayment("cash", cash);
     }
   };
-
   // Handle QRIS confirm
   const handleQrisConfirm = () => {
     setShowQrisModal(false);
     handlePayment("qris", totalPrice);
   };
-
   // --- Kirim total, date, paymentMethod ke API ---
   const handlePayment = async (paymentMethod = "cash", paidAmount = null) => {
     if (isProcessing || selectedProducts.length === 0) return;
-
     try {
       setIsProcessing(true);
-
       // Waktu Makassar (WITA - UTC+8)
       const now = new Date();
       const makassarTime = new Date(
         now.toLocaleString("en-US", { timeZone: "Asia/Makassar" })
       );
-
       // Format data untuk API dengan waktu Makassar
       const transactionData = {
         items: selectedProducts.map((product) => ({
@@ -203,20 +173,16 @@ export const PaymentSidebar = ({
         total: totalPrice,
         date: makassarTime.toISOString(),
       };
-
       // Kirim ke API
       const response = await fetch("/api/transactions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(transactionData),
       });
-
       const result = await response.json();
-
       if (!response.ok || !result.success) {
         throw new Error(result.error || "Failed to create transaction");
       }
-
       // Simpan ke localStorage untuk halaman nota
       const notaData = {
         products: selectedProducts,
@@ -233,23 +199,16 @@ export const PaymentSidebar = ({
             : 0,
         date: makassarTime.toISOString(),
         id: result.transaction.transactionId || result.transaction._id,
-        _id: result.transaction._id,
         paymentMethod: paymentMethod,
       };
-
       const kasirData = {
         username: currentKasir?.username || "Pangkep79",
       };
-
       localStorage.setItem("notaProducts", JSON.stringify(notaData));
       localStorage.setItem("kasir", JSON.stringify(kasirData));
-
-      setShowNotif(true);
-
       if (onClearProducts) onClearProducts();
       setCashAmount(0);
       setCashInput("");
-
       // Trigger refresh event untuk halaman pemasukan
       window.dispatchEvent(
         new CustomEvent("transactionCreated", {
@@ -260,11 +219,8 @@ export const PaymentSidebar = ({
           },
         })
       );
-
-      setTimeout(() => {
-        setShowNotif(false);
-        router.push("/nota");
-      }, 1500);
+      // Langsung buka tab baru /nota tanpa delay
+      window.open("/nota", "_blank");
     } catch (error) {
       alert("Terjadi kesalahan saat memproses pembayaran: " + error.message);
     } finally {
@@ -272,7 +228,6 @@ export const PaymentSidebar = ({
     }
   };
   // --- END PENTING ---
-
   const sidebarBg = isDark
     ? "bg-gradient-to-br from-purple-900 via-purple-800 to-pink-900"
     : "bg-gradient-to-br from-purple-100 via-white to-pink-100";
@@ -281,14 +236,12 @@ export const PaymentSidebar = ({
     : "border-l-4 border-purple-400/30";
   const sidebarText = isDark ? "text-pink-100" : "text-purple-800";
   const shadow = isDark ? "shadow-purple-950/40" : "shadow-purple-200/40";
-
   // Autofocus input jika shouldAutoFocusCash true setelah modal tampil
   useEffect(() => {
     if (showCashModal && shouldAutoFocusCash && cashInputRef.current) {
       cashInputRef.current.focus();
     }
   }, [showCashModal, shouldAutoFocusCash]);
-
   // Sidebar SELALU TAMPIL, tidak ada toggle/close button
   return (
     <>
@@ -404,7 +357,6 @@ export const PaymentSidebar = ({
           </div>
         </div>
       )}
-
       {/* QRIS Modal (tanpa gambar, hanya tombol saja) */}
       {showQrisModal && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
@@ -418,7 +370,6 @@ export const PaymentSidebar = ({
               <h3 className="text-lg font-bold text-gray-800 mb-1">
                 Pembayaran QRIS
               </h3>
-
               <span className="font-bold text-blue-600 text-2xl">
                 Rp{totalPrice.toLocaleString()}
               </span>
@@ -440,7 +391,6 @@ export const PaymentSidebar = ({
           </div>
         </div>
       )}
-
       <div
         className={`
           ${sidebarBg} ${sidebarText} ${borderStyle} ${shadow}
@@ -463,7 +413,6 @@ export const PaymentSidebar = ({
             Kasir: {currentKasir?.username || "ayu"}
           </div>
         </div>
-
         {/* Products List */}
         <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-200/60 max-h-[70vh]">
           {selectedProducts.length > 0 ? (
@@ -521,7 +470,6 @@ export const PaymentSidebar = ({
             </div>
           )}
         </div>
-
         {/* Footer Actions */}
         <div className="space-y-2 border-t pt-2">
           <div className="flex gap-1">
@@ -537,7 +485,6 @@ export const PaymentSidebar = ({
             >
               {includeTax ? "✓ 10%" : "+ 10%"}
             </button>
-
             <button
               onClick={openCashModal}
               disabled={isProcessing || selectedProducts.length === 0}
@@ -551,7 +498,6 @@ export const PaymentSidebar = ({
               <BanknotesIcon className="w-3 h-3" />
               Tunai
             </button>
-
             <button
               onClick={openQrisModal}
               disabled={isProcessing || selectedProducts.length === 0}
@@ -600,14 +546,6 @@ export const PaymentSidebar = ({
           </button>
         </div>
       </div>
-      {showNotif && (
-        <div
-          className={`fixed top-8 left-1/2 transform -translate-x-1/2 z-50 bg-green-500 text-white rounded-lg shadow-lg flex items-center gap-1 font-semibold animate-bounce px-4 py-2 text-sm`}
-        >
-          <CheckCircleIcon className="w-4 h-4" />
-          Pembayaran Berhasil!
-        </div>
-      )}
     </>
   );
 };
