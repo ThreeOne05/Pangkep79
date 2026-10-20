@@ -1,7 +1,6 @@
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import { PaymentProvider } from "./context/PaymentContext";
-import { BubbleBackground } from "./components/BubbleBackground";
 import ToggleTheme from "./components/ToggleTheme";
 import RequireAuth from "./components/RequireAuth";
 
@@ -26,10 +25,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" className="min-h-full">
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-gradient-to-br from-purple-200 to-purple-300 dark:bg-gradient-to-br dark:from-purple-900 dark:to-purple-950 transition-colors duration-500 min-h-full relative`}
+        className={`${geistSans.variable} ${geistMono.variable} antialiased bg-transparent text-slate-900 transition-colors duration-300`}
       >
         <ToggleTheme />
-        <BubbleBackground />
         <PaymentProvider>
           <RequireAuth>
             <div className="relative z-10 min-h-screen">{children}</div>
